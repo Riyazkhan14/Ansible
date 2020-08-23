@@ -1,0 +1,63 @@
+- name: Task for installing docker with Ansible
+  hosts: dockers
+  tasks:
+  #create yum repo for docker
+    - name: Create new Docker Repo
+      yum_repository:
+              name: docker_repo
+              description: Docker Repo
+              baseurl: https://download.docker.com/linux/centos/7/x86_64/stable/
+              gpgcheck: no
+    - debug:
+            msg: "Successfully installed Docker Repo in Yum Repo File"
+  #Docker installation
+    - name: Install Docker
+      package:
+              name: "docker-ce-18.09.1-3.el7.x86_64"
+              state: present
+    - debug:
+            msg: "Docker Installed Successful"
+  #Docker Services
+    - name: Start the Docker
+      service:
+              name: "docker"
+              state: started
+              enabled: yes
+    - debug:
+            msg: "Docker Services has been Started Successfully"
+  #Docker SDK installation
+    - name: Docker SDK Installation
+      command: pip3 install docker
+    - debug:
+            msg: "Docker SDK installed successfull"
+  #Pull Docker Image from Docker
+    - name: Pull Docker Image
+      docker_image:
+              name: httpd
+              source: pull
+  #Create Directory where data to be copied
+    - name: Create a folder
+      file:
+              path: "/root/dockercode"
+              state: directory
+  #Copy Local code to remote side
+    - name: copy data
+      copy:
+              src: "/mycode/docker/index.html"
+              dest: "/root/dockercode/"
+    - name: image copy
+      copy:
+              src: "/mycode/docker/1.jpg"
+              dest: "/root/dockercode/"
+  #Launch The Container and Expose
+    - name: Launch Docker container
+      docker_container:
+              name: httpd_webserver
+              image: httpd
+              state: started
+              exposed_ports:
+                      - "80"
+              ports:
+                      - "8585:80"
+              volumes:
+                      - /root/dockercode/:/usr/local/apache2/htdocs/
